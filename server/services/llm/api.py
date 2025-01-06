@@ -37,15 +37,15 @@ class query_model_translation(BaseModel):
 """
 
 @app.post("/trans/v1", response_model=response_model)
-async def translate_api(query: query_model_translation,request: Request):
+async def translate(query: query_model_translation,request: Request):
     """
     翻译文本。
 
     参数:
-    - Query: 翻译请求内容。
+    - query_model_translation: 翻译请求内容。
 
     返回:
-    - Query: 测试
+    - response: 对象
     """
     userid = request.headers.get("userid")
     print(f"userid: {userid}")
@@ -56,19 +56,28 @@ async def translate_api(query: query_model_translation,request: Request):
     except Exception as e:
         return response_model(code=code_enum.ERR,desc=str(e))
 
-from consulting import chat
+from consulting import consult
 
-class query_model_chat(BaseModel):
+class query_model_consult(BaseModel):
     question: str = Field(min_length=2, max_length=1000, description="咨询的问题内容" )
 
-@app.post("/chat/v1", response_model=response_model)
-async def translate_api(query: query_model_chat,request: Request):
+@app.post("/consult/v1", response_model=response_model)
+async def consult(query: query_model_consult,request: Request):
+    """
+    咨询专家
+
+    参数:
+    - query_model_consult: 翻译请求内容。
+
+    返回:
+    - response: 对象
+    """
     userid = request.headers.get("userid")
     if userid is None:
         userid = "test"
     print(f"userid: {userid}")
     try:
-        r = chat(query.question.strip(),userid)
+        r = consult(query.question.strip(),userid)
         return response_model(code=code_enum.OK,desc=r)
     except Exception as e:
         return response_model(code=code_enum.ERR,desc=str(e))

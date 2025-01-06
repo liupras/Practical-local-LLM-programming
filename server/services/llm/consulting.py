@@ -134,7 +134,7 @@ def get_conversational_rag_chain():
 
 # 带有历史记录的聊天方法
 # 显然，chat_history可以让模型更能“理解”上下文，做出更加妥帖的回答。
-def chat(query,session_id):   
+def consult(query,session_id):   
 
     conversational_rag_chain = get_conversational_rag_chain()    
 
@@ -154,10 +154,10 @@ if __name__ == '__main__':
     session_id = "liu123"
 
     # 测试chat方法
-    print (chat(query1, session_id))
-    print (chat(query2, session_id))
-    print (chat(query3, session_id))
-    print (chat(query4, session_id))
+    print (consult(query1, session_id))
+    print (consult(query2, session_id))
+    print (consult(query3, session_id))
+    print (consult(query4, session_id))
   
     # 查看聊天历史记录
     print("显示聊天历史记录:")
