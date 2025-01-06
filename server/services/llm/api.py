@@ -20,24 +20,24 @@ from fastapi import FastAPI, Request
 from pydantic import BaseModel, Field
 
 from response import response_model,code_enum
-from translation import translate
-
-# 定义一个Pydantic模型来校验输入的JSON数据
-class query_model(BaseModel):
-    lang: str = Field(min_length=2, max_length=20, description="语言名称" )
-    text: str = Field(min_length=2, max_length=500, description="待翻译的文本" )
 
 # 创建一个FastAPI实例
 app = FastAPI()
 
-# 创建一个处理POST请求的端点。
+from translation import translate
+
+class query_model_translation(BaseModel):
+    lang: str = Field(min_length=2, max_length=20, description="语言名称" )
+    text: str = Field(min_length=2, max_length=500, description="待翻译的文本" )
+
+
 """
 !注意：设置端点时，建议养成都不加 / 的风格。
 在使用API网关时，如果从API网关传过来的路径是以 / 结尾的话，因为和此端点路径不一致，此端点会自动返回301重定向，导致客户端发生400错误。
 """
 
 @app.post("/trans/v1", response_model=response_model)
-async def translate_api(query: query_model,request: Request):
+async def translate_api(query: query_model_translation,request: Request):
     """
     翻译文本。
 
@@ -52,6 +52,23 @@ async def translate_api(query: query_model,request: Request):
     
     try:
         r = translate(query.lang.strip(),query.text.strip())
+        return response_model(code=code_enum.OK,desc=r)
+    except Exception as e:
+        return response_model(code=code_enum.ERR,desc=str(e))
+
+from consulting import chat
+
+class query_model_chat(BaseModel):
+    question: str = Field(min_length=2, max_length=1000, description="咨询的问题内容" )
+
+@app.post("/chat/v1", response_model=response_model)
+async def translate_api(query: query_model_chat,request: Request):
+    userid = request.headers.get("userid")
+    if userid is None:
+        userid = "test"
+    print(f"userid: {userid}")
+    try:
+        r = chat(query.question.strip(),userid)
         return response_model(code=code_enum.OK,desc=r)
     except Exception as e:
         return response_model(code=code_enum.ERR,desc=str(e))
