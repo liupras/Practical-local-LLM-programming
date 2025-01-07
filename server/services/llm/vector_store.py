@@ -9,6 +9,7 @@
 
 from langchain_core.documents import Document
 
+# 使用 nomic-embed-text 做嵌入检索很好，使用 llama3.1 效果一般
 documents = [
     Document(
         page_content="Dogs are great companions, known for their loyalty and friendliness.",
@@ -32,6 +33,7 @@ documents = [
     ),
 ]
 
+# 使用 nomic-embed-text 做嵌入不行，使用 llama3.1 效果还行。
 documents_zh = [
     Document(
         page_content="狗是极好的伙伴，以忠诚和友好而闻名。",
@@ -58,17 +60,17 @@ documents_zh = [
 from langchain_chroma import Chroma
 from langchain_community.embeddings import OllamaEmbeddings
 
+# nomic-embed-text  llama3.1    EntropyYue/chatglm3
+embed_model_name = "nomic-embed-text"
+
 # 返回本地模型的嵌入。在存储嵌入和查询时都需要用到此嵌入函数。
 def  get_embedding():
     """
     # nomic-embed-text: 一个高性能开放嵌入模型，只有27M，具有较大的标记上下文窗口。
     # 在做英文的嵌入和检索时，明显比llama3.1要好，可惜做中文不行。
     """    
-    embeddings = OllamaEmbeddings(model="nomic-embed-text")
+    embeddings = OllamaEmbeddings(model=embed_model_name)
     return embeddings
-
-def get_embedding_2():
-    return OllamaEmbeddings(model="llama3.1")
 
 from langchain_ollama import ChatOllama
 def get_llm():
@@ -80,7 +82,7 @@ def get_llm():
     return ChatOllama(model="llama3.1",temperature=0.3,verbose=True)
 
 vectorstore = Chroma.from_documents(
-    documents,
+    documents_zh,
     embedding=get_embedding(),
 )
 
@@ -159,5 +161,7 @@ if __name__ == '__main__':
 
     #search()
     #retriever()
+
+    # 使用 nomic-embed-text 可以正确处理，使用llama3.1 失败。
     print(RAG("tell me about cats"))
 

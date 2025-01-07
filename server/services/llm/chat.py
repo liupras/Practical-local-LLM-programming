@@ -8,7 +8,8 @@
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama.llms import OllamaLLM
 
-model_name = "llama3.1"
+# llama3.1  EntropyYue/chatglm3
+model_name = "EntropyYue/chatglm3"
 
 def ask(question):
 
@@ -26,4 +27,4 @@ def ask(question):
     return result
 
 if __name__ == '__main__':
-    print(ask_me("你是谁？你有什么本事？"))
+    print(ask("你是谁？你有什么本事？"))
