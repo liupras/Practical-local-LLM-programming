@@ -6,6 +6,12 @@
 # @version : V0.5
 # @Description ：可以限制聊天记录的最大长度。max_size:设置为偶数。因为User和AI的消息会分别记录为1条，设置为偶数后，User和AI才会成对。
 
+'''
+在 https://python.langchain.com/v0.2/docs/tutorials/chatbot/ 中有使用trim_messages对消息历史进行裁剪的例子
+但是这里依然需要用大模型来计算token，通过计算结果进行裁剪，比较耗费资源。
+
+本例的方法没那么智能，也可能有时候会突破token大小限制出错，但是我想已经能解决绝大部分问题了。
+'''
 
 from langchain.schema import BaseMessage
 from langchain_community.chat_message_histories import ChatMessageHistory
@@ -23,7 +29,9 @@ class MessageHistory(ChatMessageHistory):
 
     def add_message(self, message: BaseMessage):
         super().add_message(message)
+        
         #print(f'记录新消息:{message}')
+
         # 保持聊天记录在限制范围内
         if len(self.messages) > self._max_size:
             print('消息超限，马上压缩！')

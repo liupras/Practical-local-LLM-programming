@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 # @author  : 刘立军
 # @time    : 2025-01-07
-# @function: AI助理
+# @function: AI助理2
 # @version : V0.5
 # @Description ：修改提示词，大模型秒变助理。
 
@@ -35,38 +35,69 @@ def get_history_chain():
         [
             (
                 "system",
-                "You are a helpful assistant. Answer all questions to the best of your ability.",
+                "You are a helpful assistant. Answer all questions to the best of your ability in {language}.",
             ),
             MessagesPlaceholder(variable_name="messages"),
         ]
     )
 
     chain = prompt |  get_llm()
-    return RunnableWithMessageHistory(chain, get_session_history)
+    return RunnableWithMessageHistory(chain, get_session_history,input_messages_key="messages")
 
 with_message_history = get_history_chain()
 
 from langchain_core.messages import HumanMessage
 
-def chat(human_message,session_id):
+def chat(human_message,session_id,language="简体中文"):
     """
     助理
     """
 
-    response = with_message_history.invoke(
-        [HumanMessage(content=human_message)],
+    response = with_message_history.invoke(        
+        {"messages":[HumanMessage(content=human_message)],"language":language}, 
         config={"configurable": {"session_id": session_id}},
     )
 
     return response.content
 
+
+def stream(human_message,session_id,language="简体中文"):
+    '''
+    流式输出
+    *实际测试时，感觉大模型还是一次性回复了结果，并没有流式输出！
+    '''
+    for r in with_message_history.invoke(
+        {"messages":[HumanMessage(content=human_message)],"language":language}, 
+        config={"configurable": {"session_id": session_id}},
+    ):
+        #print(r[1],end="|")
+        if r is not None and r[0] == "content":
+            yield r[1]
+        else:
+            yield None
+
 if __name__ == '__main__':
 
     session_id = "liu123"
 
+    language = "简体中文"
+
     # 测试chat方法
-    print (chat("你知道x-space的老板马斯克么？", session_id))
-    print (chat("他出生在哪个国家？", session_id))
-    print (chat("他和特朗普是什么关系？", session_id))
-  
+    #print (chat("Do you know Musk, the boss of x-space?",language, session_id))
+
+    '''
+    print (chat("你知道x-space的老板马斯克么？",language, session_id))
+    print (chat("他出生在哪个国家？",language, session_id))
+    print (chat("他和特朗普是什么关系？",language, session_id))
+    
     session_history.print_history(session_id)
+    '''
+
+    # 测试stream方法
+    for r in stream("你知道x-space的老板马斯克么？",session_id):
+        if r is not None:            
+            print (r, end="|")
+
+    for r in stream("请详细介绍一下他的主要事迹。",session_id):
+        if r is not None:            
+            print (r, end="|")
