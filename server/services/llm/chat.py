@@ -10,7 +10,7 @@ from langchain_ollama.llms import OllamaLLM
 
 model_name = "llama3.1"
 
-def ask_me(question):
+def ask(question):
 
     template = """Question: {question}
 

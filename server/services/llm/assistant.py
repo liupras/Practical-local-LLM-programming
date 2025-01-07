@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 # @author  : 刘立军
-# @time    : 2025-01-06
-# @function: 与本地大模型聊天，自动记录聊天历史
+# @time    : 2025-01-07
+# @function: AI助理
 # @version : V0.5
-# @Description ：在问答的过程中，系统自动存储以往的问题和答案，产生“记忆”功能，提升会话体验。
+# @Description ：修改提示词，大模型秒变助理。
 
 from langchain_ollama import ChatOllama
 
@@ -17,6 +17,7 @@ def get_llm():
     # 当需要模型生成明确、唯一的答案时，例如解释某个概念，较低的temperature值更为合适；如果目标是为了产生创意或完成故事，较高的temperature值可能更有助于生成多样化和有趣的文本。
     return ChatOllama(model="llama3.1",temperature=0.3,verbose=True)
 
+
 from common.LimitedChatMessageHistory import SessionHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -27,27 +28,37 @@ session_history = SessionHistory(max_size=60)
 def get_session_history(session_id: str) -> BaseChatMessageHistory:
     return session_history.process(session_id)
 
-from langchain_core.messages import HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from langchain_core.output_parsers import StrOutputParser
 def get_history_chain():
-    chain = get_llm() | StrOutputParser()
-    return RunnableWithMessageHistory(chain, get_session_history)     
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are a helpful assistant. Answer all questions to the best of your ability.",
+            ),
+            MessagesPlaceholder(variable_name="messages"),
+        ]
+    )
+
+    chain = prompt |  get_llm()
+    return RunnableWithMessageHistory(chain, get_session_history)
 
 with_message_history = get_history_chain()
 
+from langchain_core.messages import HumanMessage
+
 def chat(human_message,session_id):
     """
-    聊天
+    助理
     """
-   
+
     response = with_message_history.invoke(
         [HumanMessage(content=human_message)],
         config={"configurable": {"session_id": session_id}},
     )
 
-    return response
-
+    return response.content
 
 if __name__ == '__main__':
 
