@@ -4,7 +4,7 @@
 # @time    : 2025-01-11
 # @function: 使用tool的简单RAG
 # @version : V0.5
-# @Description ：回答不准确，效果比tool_in_agent差。
+# @Description ：去掉answer_style后回答比较好，有这个参数时回答很离谱。
 
 # https://python.langchain.com/docs/how_to/convert_runnable_to_tool/
 
@@ -18,7 +18,7 @@ temperature：用于控制生成语言模型中生成文本的随机性和创造
 """
 
 from langchain_ollama import OllamaEmbeddings
-embedding_model = OllamaEmbeddings(model="llama3.1")
+embedding_model = OllamaEmbeddings(model="nomic-embed-text")
 
 from langchain_core.documents import Document
 from langchain_core.vectorstores import InMemoryVectorStore
@@ -35,6 +35,10 @@ documents = [
 vectorstore = InMemoryVectorStore.from_documents(
     documents, embedding=embedding_model
 )
+
+embedding = embedding_model.embed_query("dogs")
+r = vectorstore.similarity_search_by_vector(embedding,k=1)
+print(f'similarity_search_by_vector:{r}')
 
 retriever = vectorstore.as_retriever(
     search_type="similarity",
@@ -53,7 +57,7 @@ you don't know the answer, say you don't know.
 Use three sentences maximum and keep the answer
 concise.
 
-Answer in the style of {answer_style}.
+Answer the question.
 
 Question: {question}
 
@@ -65,8 +69,7 @@ prompt = ChatPromptTemplate.from_messages([("system", system_prompt)])
 rag_chain = (
     {
         "context": itemgetter("question") | retriever,
-        "question": itemgetter("question"),
-        "answer_style": itemgetter("answer_style"),
+        "question": itemgetter("question")
     }
     | prompt
     | llm
@@ -83,17 +86,8 @@ rag_tool = rag_chain.as_tool(
 from langgraph.prebuilt import create_react_agent
 agent = create_react_agent(llm, [rag_tool])
 
-# 回答不准确
 for chunk in agent.stream(
-    {"messages": [("human", "What would a pirate say dogs are known for?")],
-     "answer_style": "formal"}
+    {"messages": [("human", "What would a pirate say dogs are known for?")]}
 ):
-    """
-    answer_style可以用来指定回答应该是正式的、非正式的、幽默的、学术性的等。例如：
-    formal:正式的回答
-    informal:非正式的回答
-    humorous:幽默的回答
-    academic:学术性的回答
-    """
     print(chunk)
     print("----")

@@ -27,9 +27,8 @@ temperature：用于控制生成语言模型中生成文本的随机性和创造
 # Hiding arguments from the model
 
 from typing import List
-
-from langchain_core.tools import InjectedToolArg, tool
 from typing_extensions import Annotated
+from langchain_core.tools import InjectedToolArg, tool
 
 user_to_pets = {}
 
@@ -91,6 +90,7 @@ tools = [
 llm_with_tools = llm.bind_tools(tools)
 
 query = "my favorite animals are cats and parrots"
+#query = "what's your name?"
 
 # 将文本转化为json结构
 print("---1、调用LLM，将请求转化为json结构---")

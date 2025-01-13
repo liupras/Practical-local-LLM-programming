@@ -33,9 +33,7 @@ from typing_extensions import Annotated
 
 user_to_pets = {}
 
-from typing import Optional, Type
 from langchain_core.tools import BaseTool
-from pydantic import BaseModel, Field
 
 class UpdateFavoritePets2(BaseTool):
     name: str = "update_favorite_pets"

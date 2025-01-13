@@ -24,7 +24,6 @@ temperature：用于控制生成语言模型中生成文本的随机性和创造
 from typing import Dict, List
 
 from langchain_core.messages import AIMessage
-from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import tool
 
 
