@@ -7,16 +7,14 @@
 # @Description ：修改提示词，大模型秒变助理。
 
 from langchain_ollama import ChatOllama
-
-# 返回本地大模型
-def get_llm():
-
-    # temperature：用于控制生成语言模型中生成文本的随机性和创造性。
-    # 当temperature值较低时，模型倾向于选择概率较高的词，生成的文本更加保守和可预测，但可能缺乏多样性和创造性。
-    # 当temperature值较高时，模型选择的词更加多样化，可能会生成更加创新和意想不到的文本，但也可能引入语法错误或不相关的内容。
-    # 当需要模型生成明确、唯一的答案时，例如解释某个概念，较低的temperature值更为合适；如果目标是为了产生创意或完成故事，较高的temperature值可能更有助于生成多样化和有趣的文本。
-    return ChatOllama(model="llama3.1",temperature=0.3,verbose=True)
-
+llm = ChatOllama(model="llama3.1",temperature=0.3,verbose=True)
+"""
+temperature：用于控制生成语言模型中生成文本的随机性和创造性。
+当temperature值较低时，模型倾向于选择概率较高的词，生成的文本更加保守和可预测，但可能缺乏多样性和创造性。
+当temperature值较高时，模型选择的词更加多样化，可能会生成更加创新和意想不到的文本，但也可能引入语法错误或不相关的内容。
+当需要模型生成明确、唯一的答案时，例如解释某个概念，较低的temperature值更为合适；如果目标是为了产生创意或完成故事，较高的temperature值可能更有助于生成多样化和有趣的文本。
+"""
+# 
 
 from common.LimitedChatMessageHistory import SessionHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
@@ -41,7 +39,7 @@ def get_history_chain():
         ]
     )
 
-    chain = prompt |  get_llm()
+    chain = prompt |  llm
     return RunnableWithMessageHistory(chain, get_session_history,input_messages_key="messages")
 
 with_message_history = get_history_chain()

@@ -61,29 +61,24 @@ from langchain_chroma import Chroma
 from langchain_community.embeddings import OllamaEmbeddings
 
 # nomic-embed-text  llama3.1    EntropyYue/chatglm3
-embed_model_name = "nomic-embed-text"
-
-# 返回本地模型的嵌入。在存储嵌入和查询时都需要用到此嵌入函数。
-def  get_embedding():
-    """
-    # nomic-embed-text: 一个高性能开放嵌入模型，只有27M，具有较大的标记上下文窗口。
-    # 在做英文的嵌入和检索时，明显比llama3.1要好，可惜做中文不行。
-    """    
-    embeddings = OllamaEmbeddings(model=embed_model_name)
-    return embeddings
+embeddings_model = OllamaEmbeddings(model="nomic-embed-text")
+"""
+nomic-embed-text: 一个高性能开放嵌入模型，只有27M，具有较大的标记上下文窗口。
+在做英文的嵌入和检索时，明显比llama3.1要好，可惜做中文不行。
+"""    
 
 from langchain_ollama import ChatOllama
-def get_llm():
-
-    # temperature：用于控制生成语言模型中生成文本的随机性和创造性。
-    # 当temperature值较低时，模型倾向于选择概率较高的词，生成的文本更加保守和可预测，但可能缺乏多样性和创造性。
-    # 当temperature值较高时，模型选择的词更加多样化，可能会生成更加创新和意想不到的文本，但也可能引入语法错误或不相关的内容。
-    # 当需要模型生成明确、唯一的答案时，例如解释某个概念，较低的temperature值更为合适；如果目标是为了产生创意或完成故事，较高的temperature值可能更有助于生成多样化和有趣的文本。
-    return ChatOllama(model="llama3.1",temperature=0.3,verbose=True)
-
+llm = ChatOllama(model="llama3.1",temperature=0.3,verbose=True)
+"""
+temperature：用于控制生成语言模型中生成文本的随机性和创造性。
+当temperature值较低时，模型倾向于选择概率较高的词，生成的文本更加保守和可预测，但可能缺乏多样性和创造性。
+当temperature值较高时，模型选择的词更加多样化，可能会生成更加创新和意想不到的文本，但也可能引入语法错误或不相关的内容。
+当需要模型生成明确、唯一的答案时，例如解释某个概念，较低的temperature值更为合适；如果目标是为了产生创意或完成故事，较高的temperature值可能更有助于生成多样化和有趣的文本。
+"""
+ 
 vectorstore = Chroma.from_documents(
     documents_zh,
-    embedding=get_embedding(),
+    embedding=embeddings_model,
 )
 
 def search():
@@ -102,7 +97,7 @@ def search():
     print(f'similarity_search_with_score:{r}')
 
     # Return documents based on similarity to an embedded query
-    embedding = get_embedding().embed_query("cat")
+    embedding = embeddings_model.embed_query("cat")
     vectorstore.similarity_search_by_vector(embedding)
 
 
@@ -151,7 +146,7 @@ def RAG(question):
         search_kwargs={"k": 1},
     )
     
-    rag_chain = {"context": retriever, "question": RunnablePassthrough()} | prompt | get_llm()
+    rag_chain = {"context": retriever, "question": RunnablePassthrough()} | prompt | llm
     response = rag_chain.invoke({"question": question})
 
     # print(response.content)
