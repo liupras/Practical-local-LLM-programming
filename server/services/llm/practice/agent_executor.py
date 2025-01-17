@@ -16,7 +16,7 @@ from langchain_core.tools import tool
 
 @tool(parse_docstring=True)
 def get_wheather_info(
-    city_name: str
+    city_name: str = ''  #不设置默认值可能导致LLM强行解析city_name出错或者强行调用这个tool
 ) -> str:
     """Get weather information for a city.
 
@@ -116,7 +116,9 @@ def get_agent():
 
     [get_wheather_info,langsmith_search]. 
 
-    - **Use them only if required**!"""
+    - **Use them only if required**!
+    - If there is no reliable basis for determining city_name, do not call get_wheather_info
+    """
     prompt = ChatPromptTemplate([
         ("system", systemprompt),
         ("placeholder", "{chat_history}"),
@@ -164,17 +166,39 @@ agent_with_chat_history = RunnableWithMessageHistory(
 
 def test_agent_with_chat_history():
     session_id = "liupras"
+    print("\n*****************************")
     r = agent_with_chat_history.invoke(
         {"input": "hi! I'm bob"},
         config={"configurable": {"session_id": session_id}},
     )
     print(f'agent_with_chat_history.invoke 1:\n{r}')
-
+    
+    print("\n*****************************")
     r = agent_with_chat_history.invoke(
         {"input": "what's my name?"},
         config={"configurable": {"session_id": session_id}},
     )
     print(f'agent_with_chat_history.invoke 2:\n{r}')
+    
+
+def test_agent_with_chat_history_stream():
+    session_id = "liupras"
+    print("\n*****************************")
+    for chunk in agent_with_chat_history.stream(
+        {"input": "hi! I'm bob"},
+        config={"configurable": {"session_id": session_id}},
+    ):
+        print(chunk)
+        print("----")
+
+    print("*****************************")
+    for chunk in agent_with_chat_history.stream(
+        {"input": "what's my name?"},
+        config={"configurable": {"session_id": session_id}},
+    ):
+        print(chunk)
+        print("----")
 
 if __name__ == '__main__':
     test_agent_with_chat_history()
+    #test_agent_with_chat_history_stream()
