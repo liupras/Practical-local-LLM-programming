@@ -9,7 +9,7 @@
 # https://python.langchain.com/docs/how_to/agent_executor/
 
 import os 
-os.environ['USER_AGENT'] = 'myagent'
+os.environ['USER_AGENT'] = 'agent_executor'
 
 # Tool
 from langchain_core.tools import tool
