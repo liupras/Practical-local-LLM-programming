@@ -51,7 +51,7 @@ graph_builder = StateGraph(MessagesState)
 from langchain_core.tools import tool
 
 
-@tool(response_format="content_and_artifact",parse_docstring=True)
+@tool(response_format="content_and_artifact",parse_docstring=True)      # docstring的内容对agent自动推理影响比较大
 def retrieve(keywords: str):
     """Retrieve information related to keywords.
 
