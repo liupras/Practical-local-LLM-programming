@@ -158,13 +158,6 @@ graph_builder.add_edge("generate", END)
 
 graph = graph_builder.compile()
 
-def show_graph():
-    from PIL import Image as PILImage
-    from io import BytesIO
-    png_data = graph.get_graph().draw_mermaid_png()
-    img = PILImage.open(BytesIO(png_data))
-    img.show()
-
 def ask(question):
     for step in graph.stream(
         {"messages": [{"role": "user", "content": question}]},
@@ -205,12 +198,6 @@ from langgraph.prebuilt import create_react_agent
 
 agent_executor = create_react_agent(llm, tools=[retrieve], checkpointer=memory)
 
-def show_agent_with_memory():
-    from PIL import Image as PILImage
-    from io import BytesIO
-    png_data = agent_executor.get_graph().draw_mermaid_png()
-    img = PILImage.open(BytesIO(png_data))
-    img.show()
 
 def ask_agent(question,thread_id):
 
@@ -225,10 +212,14 @@ def ask_agent(question,thread_id):
         step["messages"][-1].pretty_print()
 
 if __name__ == '__main__':
-    #show_graph()
+
+    #from utils import show_graph
+    #show_graph(graph)
+    #show_graph(agent_executor)
+
     #ask("Hello world")
     #ask("What is Task Decomposition?")
-    #show_graph_with_memory()
+    
     thread_id = '12345'
     #ask_with_history("What is Task Decomposition?",thread_id)
     #ask_with_history("Can you look up some common ways of doing it?",thread_id)

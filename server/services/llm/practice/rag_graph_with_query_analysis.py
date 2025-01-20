@@ -128,14 +128,8 @@ def ask(question):
         print(f"{step}\n\n----------------\n")
 
 
-def show_graph():
-    from PIL import Image as PILImage
-    from io import BytesIO
-    png_data = graph.get_graph().draw_mermaid_png()
-    img = PILImage.open(BytesIO(png_data))
-    img.show()
-
-
 if __name__ == '__main__':
     ask("What does the beginning of the post say about Task Decomposition?")
-    #show_graph()
+
+    #from utils import show_graph
+    #show_graph(graph)

@@ -89,14 +89,8 @@ def ask(question):
     response = graph.invoke({"question": question})
     print(f'the answer is: \n{response["answer"]}')
 
-def show_graph():
-    from PIL import Image as PILImage
-    from io import BytesIO
-    png_data = graph.get_graph().draw_mermaid_png()
-    img = PILImage.open(BytesIO(png_data))
-    img.show()
-
-
 if __name__ == '__main__':
     #ask("What is Task Decomposition?")
-    show_graph()
+
+    from utils import show_graph
+    show_graph(graph)

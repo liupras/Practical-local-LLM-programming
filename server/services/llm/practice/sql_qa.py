@@ -11,13 +11,10 @@
 
 import os
 
-# 获取当前文件的路径
-current_file_path = os.path.abspath(__file__)
+# 获取当前执行的程序文件的文件夹路径
+current_folder = os.path.dirname(os.path.abspath(__file__))
 
-# 获取当前文件所在文件夹的上一级文件夹路径
-parent_folder = os.path.dirname(os.path.dirname(current_file_path))
-
-db_file_path = os.path.join(parent_folder, 'assert/Chinook.db')
+db_file_path = os.path.join(current_folder, 'assert/Chinook.db')
 
 from langchain_community.utilities import SQLDatabase
 
