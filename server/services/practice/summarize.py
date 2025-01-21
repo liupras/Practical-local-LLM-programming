@@ -48,6 +48,34 @@ def sum_single_llm_call_stream() :
     for token in chain.stream({"context": docs}):
         print(token, end="|")
 
+# Map
+map_prompt = ChatPromptTemplate.from_messages(
+    [("system", "Write a concise summary of the following:\\n\\n{context}")]
+)
+
+# Reduce
+# Also available via the hub: `hub.pull("rlm/reduce-prompt")`
+reduce_template = """
+The following is a set of summaries:
+{docs}
+Take these and distill it into a final, consolidated summary
+of the main themes.
+"""
+
+reduce_prompt = ChatPromptTemplate([("human", reduce_template)])
+
+# Orchestration via LangGraph
+
+from langchain_text_splitters import CharacterTextSplitter
+
+text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
+    chunk_size=1000, chunk_overlap=0
+)
+split_docs = text_splitter.split_documents(docs)
+print(f"Generated {len(split_docs)} documents.")
+
+
+
 if __name__ == '__main__':
     #sum_single_llm_call()
     sum_single_llm_call_stream()
