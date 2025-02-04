@@ -50,13 +50,13 @@ def translate_2(text,language):
     return response
 
 if __name__ == '__main__':
-    """
+    
     response = translate_1("Hello, how are you?")
     print(response)
     
     for token in translate_1_stream("Hello, how are you?"):
         print(token, end="|")
-    """
+    
 
     response = translate_2("First up, let's learn how to use a language model by itself.","Chinese")
     print(response)

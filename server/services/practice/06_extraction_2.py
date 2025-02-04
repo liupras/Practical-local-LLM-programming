@@ -51,6 +51,10 @@ from langchain_core.utils.function_calling import tool_example_to_messages
 
 examples = [
     (
+        "The ocean is vast and blue. It's more than 20,000 feet deep.",
+        Person(),
+    ),
+    (
         "Fiona traveled far from France to Spain.",
         Person(name="Fiona", height_in_meters=None, hair_color=None),
     ),
@@ -60,11 +64,10 @@ examples = [
     ),
 ]
 
-
 messages = []
 
 for txt, tool_call in examples:
-    if tool_call.people:
+    if tool_call.name is None:
         # This final message is optional for some providers
         ai_response = "Detected people."
     else:
@@ -75,13 +78,15 @@ for message in messages:
     message.pretty_print()
 
 def extract(model_name,text):
-    structured_llm = ChatOllama(model=model_name,temperature=0.5,verbose=True).with_structured_output(schema=Person)  
-    response = structured_llm.invoke([text])
+    structured_llm = ChatOllama(model=model_name,temperature=0,verbose=True).with_structured_output(schema=Person)  
+    user_message = {"role": "user", "content":text}
+    response = structured_llm.invoke([user_message])
     return response
 
 def extract_with_messages(model_name,text):
-    structured_llm = ChatOllama(model=model_name,temperature=0.5,verbose=True).with_structured_output(schema=Person)  
-    structured_llm.invoke(messages + [text])
+    structured_llm = ChatOllama(model=model_name,temperature=0,verbose=True).with_structured_output(schema=Person)  
+    user_message = {"role": "user", "content":text}
+    structured_llm.invoke(messages + [user_message])
     return response
 
 if __name__ == '__main__':
@@ -92,16 +97,29 @@ if __name__ == '__main__':
     response = reference("MFDoom/deepseek-r1-tool-calling:7b")
     print(f'\n deepseek-r1 response:\n{response}')
     '''
-    # llama3.1无法自动把feet转换成meter，所以我们把这个问题简化了一些，在text中直接用meter做单位。
-    text = {"role": "user", "content":"Roy is 1.73 meters tall and has black hair."}
+    print('-----------------------llama-------------------------------')
+    text = "Roy is 1.73 meters tall and has black hair."
     response = extract("llama3.1",text)
     print(f'\n llama3.1 response:\n{response}')
     response = extract_with_messages("llama3.1",text)
     print(f'\n llama3.1 response:\n{response}')
 
-
-    text = {"role": "user", "content":"John Doe is 1.72 meters tall and has brown hair."}
+    text = "John Doe is 1.72 meters tall and has brown hair."
     response = extract("llama3.1",text)
+    print(f'\n llama3.1 response:\n{response}')
+    response = extract_with_messages("llama3.1",text)
+    print(f'\n llama3.1 response:\n{response}')
+
+    print('-----------------------deepseek-------------------------------')
+
+    text = "Roy is 1.73 meters tall and has black hair."
+    response = extract("MFDoom/deepseek-r1-tool-calling:7b",text)
+    print(f'\n deepseek response:\n{response}')
+    response = extract_with_messages("MFDoom/deepseek-r1-tool-calling:7b",text)
+    print(f'\n deepseek response:\n{response}')
+
+    text = "John Doe is 1.72 meters tall and has brown hair."
+    response = extract("MFDoom/deepseek-r1-tool-calling:7b",text)
     print(f'\n llama3.1 response:\n{response}')
     response = extract_with_messages("llama3.1",text)
     print(f'\n llama3.1 response:\n{response}')

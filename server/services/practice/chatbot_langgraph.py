@@ -126,7 +126,7 @@ from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 from typing_extensions import Annotated, TypedDict
 
-    #  added a new language input to the prompt
+#  added a new language input to the prompt
 prompt_template = ChatPromptTemplate.from_messages(
     [
         (
@@ -249,8 +249,8 @@ def trim_message_history():
     print(output["messages"][-1].pretty_print())
 
 if __name__ == '__main__':
-    #chat_with_memory()
-    #message_persistence()
-    #message_persistence_with_prompt()
-    #message_persistence_with_prompt_2()
+    chat_with_memory()
+    message_persistence()
+    message_persistence_with_prompt()
+    message_persistence_with_prompt_2()
     trim_message_history()
