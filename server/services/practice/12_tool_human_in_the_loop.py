@@ -46,7 +46,7 @@ def test_tool_call(model_name,query):
     print(f' tool_calls is:\n{ai_msg.tool_calls}')
 
 def call_tools(msg: AIMessage) -> List[Dict]:
-    """调用工具方法。"""
+    """调用工具的通用方法。"""
 
     tool_map = {tool.name: tool for tool in tools}
     tool_calls = msg.tool_calls.copy()
@@ -111,11 +111,14 @@ def approval(model_name,query):
 if __name__ == '__main__':
     query = "我过去7天收到了多少封电子邮件？"
 
+    print('--------test_tool_call----------------------')
     test_tool_call("llama3.1",query)
     test_tool_call("MFDoom/deepseek-r1-tool-calling:7b",query)
 
+    print('--------tool_call----------------------')
     tool_call("llama3.1",query)
     tool_call("MFDoom/deepseek-r1-tool-calling:7b",query)
 
+    print('--------approval----------------------')
     approval("llama3.1",query)
     approval("MFDoom/deepseek-r1-tool-calling:7b",query)

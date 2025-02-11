@@ -35,15 +35,14 @@ user_to_pets = {}
 
 from langchain_core.tools import BaseTool
 
-class UpdateFavoritePets2(BaseTool):
+class UpdateFavoritePets(BaseTool):
     name: str = "update_favorite_pets"
-    description: str = "Update list of favorite pets"
+    description: str = "添加或者更新最喜爱的宠物列表"
 
     def _run(self, pets: List[str], user_id: Annotated[str, InjectedToolArg]) -> None:
         user_to_pets[user_id] = pets
 
-
-update_favorite_pets = UpdateFavoritePets2()
+update_favorite_pets = UpdateFavoritePets()
 
 
 @tool(parse_docstring=True)

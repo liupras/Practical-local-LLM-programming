@@ -38,19 +38,18 @@ from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 
 class UpdateFavoritePetsSchema(BaseModel):
-    """Update list of favorite pets"""
+    """添加或者更新最喜爱的宠物列表。"""
 
-    pets: List[str] = Field(..., description="List of favorite pets to set.")
-    user_id: Annotated[str, InjectedToolArg] = Field(..., description="User's ID.")
+    pets: List[str] = Field(..., description="最喜爱的宠物列表。")
+    user_id: Annotated[str, InjectedToolArg] = Field(..., description="用户ID。")
 
 class UpdateFavoritePets(BaseTool):
     name: str = "update_favorite_pets"
-    description: str = "Update list of favorite pets"
+    description: str = "添加或者更新最喜爱的宠物列表"
     args_schema: Optional[Type[BaseModel]] = UpdateFavoritePetsSchema
 
     def _run(self, pets, user_id):
         user_to_pets[user_id] = pets
-
 
 update_favorite_pets = UpdateFavoritePets()
 
