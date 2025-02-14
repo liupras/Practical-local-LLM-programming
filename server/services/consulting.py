@@ -39,18 +39,14 @@ def get_llm():
     return ChatOllama(model=model_name,temperature=0.1,verbose=True)
 
 from langchain_core.chat_history import BaseChatMessageHistory
-from common.LimitedChatMessageHistory import LimitedChatMessageHistory
 
-store = {}
+# 处理聊天历史
+from common.LimitedChatMessageHistory import SessionHistory
+session_history = SessionHistory(max_size=20)
 
-MAX_HISTORY_SIZE = 60
-
-
-# 在会话中记录历史聊天记录
 def get_session_history(session_id: str) -> BaseChatMessageHistory:
-    if session_id not in store:
-        store[session_id] = LimitedChatMessageHistory(max_size=MAX_HISTORY_SIZE)
-    return store[session_id]
+    return session_history.process(session_id)
+
 
 def get_retriever():
     
@@ -128,18 +124,6 @@ def consult(query,session_id):
     )
     return response["answer"]
 
-def print_history(session_id):
-    """
-    查看聊天历史记录
-    """
-    print("显示聊天历史记录:")
-    for message in store[session_id].messages:
-        if isinstance(message, AIMessage):
-            prefix = "AI"
-        else:
-            prefix = "User"
-
-        print(f"{prefix}: {message.content}\n")
 
 if __name__ == '__main__':
 
@@ -151,4 +135,4 @@ if __name__ == '__main__':
     print (consult("在生产、销售的产品中掺杂、掺假 违反了哪个法律？哪个条款？", session_id))
     print (consult("下面的问题与中华人民共和国产品质量法无关。宣扬邪教、迷信 违反了哪个法律？哪个条款？", session_id))
   
-    print_history(session_id)
+    session_history.print_history(session_id)

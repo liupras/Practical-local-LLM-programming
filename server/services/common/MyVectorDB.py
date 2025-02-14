@@ -11,7 +11,6 @@ from langchain_ollama import OllamaEmbeddings
 from tqdm import tqdm
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import CSVLoader
 
 class LocalVectorDBChroma:
     """使用Chroma在本地处理适量数据库"""
@@ -38,6 +37,10 @@ class LocalVectorDBChroma:
             vectordb.add_documents(batch)
 
     def embed_csv(self,src_file_path):
+        """嵌入csv"""
+
+        from langchain_community.document_loaders import CSVLoader
+        
         loader = CSVLoader(file_path=src_file_path,
                        csv_args={"delimiter": self._delimiter},
                        autodetect_encoding=True)
@@ -49,9 +52,20 @@ class LocalVectorDBChroma:
         chunk_size: 每个文本块的最大长度/字符数
         chunk_overlap: 拆分的文本块之间重叠字符数
         """
-        texts = text_splitter.split_documents(docs) 
+        documents = text_splitter.split_documents(docs) 
 
         # 耗时较长，需要耐心等候...
-        self.embed_documents_in_batches(texts)
+        self.embed_documents_in_batches(documents)
 
-    
+    def embed_webpage(self,url):
+        """嵌入网页"""
+
+        from langchain_community.document_loaders import WebBaseLoader
+
+        loader = WebBaseLoader(url,encoding="utf-8")    # 增加encoding参数防止中文乱码
+        docs = loader.load()
+        documents = RecursiveCharacterTextSplitter(
+            chunk_size=1000, chunk_overlap=200
+        ).split_documents(docs)
+
+        self.embed_documents_in_batches(documents)

@@ -20,7 +20,8 @@ class MessageHistory(ChatMessageHistory):
     """
     扩展的聊天历史记录类。可以限制聊天记录的最大长度。
 
-    - max_size:设置为偶数。因为User和AI的消息会分别记录为1条，设置为偶数后，User和AI才会成对。
+    Args:
+        max_size: 设置为偶数。因为User和AI的消息会分别记录为1条，设置为偶数后，User和AI才会成对。
     """
 
     def __init__(self, max_size: int):        
@@ -28,9 +29,7 @@ class MessageHistory(ChatMessageHistory):
         self._max_size = max_size 
 
     def add_message(self, message: BaseMessage):
-        super().add_message(message)
-        
-        #print(f'记录新消息:{message}')
+        super().add_message(message)  
 
         # 保持聊天记录在限制范围内
         if len(self.messages) > self._max_size:
@@ -69,4 +68,3 @@ class SessionHistory(object):
                 prefix = "User"
 
             print(f"{prefix}: {message.content}\n")
-

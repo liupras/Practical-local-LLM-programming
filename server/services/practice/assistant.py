@@ -18,13 +18,13 @@ def get_llm():
     return ChatOllama(model="llama3.1",temperature=0.3,verbose=True)
 
 
-from common.LimitedChatMessageHistory import SessionHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.chat_history import BaseChatMessageHistory
 
+# 处理聊天历史
+from common.LimitedChatMessageHistory import SessionHistory
 session_history = SessionHistory(max_size=20)
 
-# 处理聊天历史
 def get_session_history(session_id: str) -> BaseChatMessageHistory:
     return session_history.process(session_id)
 
