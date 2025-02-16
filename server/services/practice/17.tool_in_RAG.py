@@ -9,7 +9,7 @@
 # https://python.langchain.com/docs/how_to/convert_runnable_to_tool/
 
 """
-确定重要文件路径
+确定文件路径
 """
 
 import os,sys
