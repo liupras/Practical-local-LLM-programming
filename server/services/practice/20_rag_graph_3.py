@@ -59,7 +59,7 @@ def retrieve(query: str):
 
     # 根据相似度分数过滤结果
     filtered_docs = [
-        doc for doc, score in retrieved_docs if score >= similarity_threshold
+        doc for doc, score in retrieved_docs if score <= similarity_threshold
     ]
 
     serialized = "\n\n".join(
@@ -76,11 +76,11 @@ def retrieve(query: str):
 from langchain_ollama import ChatOllama
 from langchain_core.messages import SystemMessage
 
-from langgraph.graph import MessagesState, StateGraph
-from langgraph.graph import END
+from langgraph.graph import MessagesState, StateGraph,END
 from langgraph.prebuilt import ToolNode, tools_condition
+from langgraph.checkpoint.memory import MemorySaver
 
-def build_graph(llm_model_name):
+def build_graph_with_memory(llm_model_name):
     """构建 langgraph 链"""
     
     llm = ChatOllama(model=llm_model_name,temperature=0, verbose=True)
@@ -136,7 +136,7 @@ def build_graph(llm_model_name):
         # MessagesState 将消息附加到 state 而不是覆盖
         return {"messages": [response]}
 
-    # 串联节点和边，构建图
+    # 4: 串联节点和边，构建图
     graph_builder = StateGraph(MessagesState)
 
     graph_builder.add_node(query_or_respond)
@@ -150,83 +150,95 @@ def build_graph(llm_model_name):
         {END: END, "tools": "tools"},
     )
     graph_builder.add_edge("tools", "generate")
-    graph_builder.add_edge("generate", END)
+    graph_builder.add_edge("generate", END)    
 
     graph = graph_builder.compile()
+
+    # 增加记忆功能
+    memory = MemorySaver()
+    graph = graph_builder.compile(checkpointer=memory)
+
     return graph
 
-def ask(llm_model_name,question):
-    """提问"""
 
-    graph = build_graph(llm_model_name)
+def ask_with_history(graph,thread_id,question):
+    """提问，记录聊天历史"""
+
+    print('---ask_with_history---')
+    conf = {"configurable": {"thread_id": thread_id}}
     for step in graph.stream(
         {"messages": [{"role": "user", "content": question}]},
             stream_mode="values",
+            config = conf,
         ):
             step["messages"][-1].pretty_print()
 
-from langgraph.checkpoint.memory import MemorySaver
 
-memory = MemorySaver()
-graph_with_memory = graph_builder.compile(checkpointer=memory)
-
-def show_graph_with_memory():
-    from PIL import Image as PILImage
-    from io import BytesIO
-    png_data = graph_with_memory.get_graph().draw_mermaid_png()
-    img = PILImage.open(BytesIO(png_data))
-    img.show()
-
-def ask_with_history(question,thread_id):
-
-    # Specify an ID for the thread
-    config = {"configurable": {"thread_id": thread_id}}
-
-    for step in graph_with_memory.stream(
-        {"messages": [{"role": "user", "content": question}]},
-        stream_mode="values",
-        config=config,
-    ):
-        step["messages"][-1].pretty_print()
-
-#agents
 """
-Agents leverage the reasoning capabilities of LLMs to make decisions during execution. Using agents allows you to offload additional discretion over the retrieval process. 
-Although their behavior is less predictable than the above "chain", they are able to execute multiple retrieval steps in service of a query, or iterate on a single search.
+3. 智能体
 """
+
+"""
+智能体利用 LLM 的推理能力在执行过程中做出决策。使用代理可以让您在检索过程中减轻额外的判断力。
+虽然它们的行为比上述“链”更难预测，但它们能够执行多个检索步骤来处理查询，或者在单个搜索中进行迭代。
+"""
+
 from langgraph.prebuilt import create_react_agent
 
-agent_executor = create_react_agent(llm, tools=[retrieve], checkpointer=memory)
+def create_agent(llm_model_name):
+    """创建智能体"""
+
+    llm = ChatOllama(model=llm_model_name,temperature=0, verbose=True)
+    memory = MemorySaver()
+    agent_executor = create_react_agent(llm, tools=[retrieve], checkpointer=memory)
+    return agent_executor
 
 
-def ask_agent(question,thread_id):
+def ask_agent(agent,thread_id,question):
+    """咨询智能体"""
 
-    # Specify an ID for the thread
-    config = {"configurable": {"thread_id": thread_id}}
-
-    for step in agent_executor.stream(
+    print('---ask_agent---')
+    conf = {"configurable": {"thread_id": thread_id}}
+    for step in agent.stream(
         {"messages": [{"role": "user", "content": question}]},
         stream_mode="values",
-        config=config,
+        config=conf,
     ):
         step["messages"][-1].pretty_print()
 
+def show_graph():
+    """图形化显示链和智能体结构"""
+
+    from utils import show_graph
+
+    graph = build_graph_with_memory("qwen2.5")
+    show_graph(graph)
+
+    agent = create_agent("qwen2.5")
+    show_graph(agent)
+
+
+def test_model(llm_model_name):
+    """测试大语言模型"""
+
+    print(f'------{llm_model_name}------')
+
+    question1 = "羊的学名是什么？"
+    question2 = "它有什么特点？"
+    thread_id = "liu2233"
+
+    graph = build_graph_with_memory(llm_model_name)
+    ask_with_history(graph,thread_id,question1)
+    ask_with_history(graph,thread_id,question2)
+
+    agent = create_agent(llm_model_name)
+    ask_agent(agent,thread_id,question1)
+    ask_agent(agent,thread_id,question2)
+
 if __name__ == '__main__':
-
-    #from utils import show_graph
-    #show_graph(graph)
-    #show_graph(agent_executor)
-
-    #ask("Hello world")
-    #ask("What is Task Decomposition?")
     
-    thread_id = '12345'
-    #ask_with_history("What is Task Decomposition?",thread_id)
-    #ask_with_history("Can you look up some common ways of doing it?",thread_id)
-    #show_agent_with_memory()
+    test_model('qwen2.5')
+    test_model('llama3.1')
+    test_model("MFDoom/deepseek-r1-tool-calling:7b")
 
-    input_message = (
-        "What is the standard method for Task Decomposition?\n\n"
-        "Once you get the answer, look up common extensions of that method."
-    )
-    ask_agent(input_message,thread_id)
+    show_graph()
