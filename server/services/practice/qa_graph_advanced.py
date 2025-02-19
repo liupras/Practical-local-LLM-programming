@@ -11,6 +11,8 @@
 # 安装：https://neo4j.com/docs/operations-manual/current/installation/windows/
 # 安装APOC插件：https://cloud.baidu.com/article/3289100 https://github.com/neo4j/apoc   https://github.com/neo4j/apoc/releases/tag/5.26.1
 
+# https://python.langchain.com/docs/tutorials/graph/#advanced-implementation-with-langgraph
+
 import os
 os.environ["NEO4J_URI"] = "bolt://localhost:7687"
 os.environ["NEO4J_USERNAME"] = "neo4j"
