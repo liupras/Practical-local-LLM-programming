@@ -111,14 +111,14 @@ def test_model(model_name):
         "Describe the PlaylistTrack table."  #区分大小写，待改进。比如：用 PlaylistTrack 可以工作，但是用 playlisttrack 不准确
     ]  
     for q in qs:
-        #execute_query(model_name,q)
-        #execute_query_2(model_name,q)
+        execute_query(model_name,q)
+        execute_query_2(model_name,q)
         ask(model_name,q)
 
 
 if __name__ == '__main__':
-    #test_db()
+    test_db()
     test_model("llama3.1")
-    #test_model("qwen2.5")    
-    #test_model("deepseek-r1")
+    test_model("qwen2.5")    
+    test_model("deepseek-r1")
     
