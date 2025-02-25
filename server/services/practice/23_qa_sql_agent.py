@@ -66,7 +66,6 @@ You MUST double check your query before executing it. If you get an error while 
 DO NOT make any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the database.
 
 You have access to the following tables: {table_names}
-
 """.format(
     table_names=db.get_usable_table_names()
 )

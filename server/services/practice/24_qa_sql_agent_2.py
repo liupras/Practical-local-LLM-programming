@@ -78,22 +78,21 @@ def embed_texts_in_batches(documents, batch_size=10):
         # 耗时较长，需要耐心等候...
         vectordb.add_texts(batch)
 
+import ast
+import re
 
+def query_as_list(db, query):
+    res = db.run(query)
+    res = [el for sub in ast.literal_eval(res) for el in sub if el]
+    res = [re.sub(r"\b\d+\b", "", string).strip() for string in res]
+    return list(set(res))
+    
 def create_db():
     """创建矢量数据库"""
 
     if os.path.exists(persist_directory):
         print("数据库已创建")
         return
-
-    import ast
-    import re
-
-    def query_as_list(db, query):
-        res = db.run(query)
-        res = [el for sub in ast.literal_eval(res) for el in sub if el]
-        res = [re.sub(r"\b\d+\b", "", string).strip() for string in res]
-        return list(set(res))
 
     artists = query_as_list(db, "SELECT Name FROM Artist")
     print(f'artists:\n{artists[:5]}\n') 
@@ -110,7 +109,7 @@ create_db()
 4. 创建检索工具
 """
 
-retriever = vectordb.as_retriever(search_kwargs={"k": 5})
+retriever = vectordb.as_retriever(search_kwargs={"k": 5})   # 返回5条信息
 
 from langchain.agents.agent_toolkits import create_retriever_tool
 description = """Use to look up values to filter on. Input is an approximate spelling of the proper noun, output is \
@@ -162,7 +161,7 @@ def ask(llm_model_name,question):
     tools = create_tools(llm_model_name)
     tools.append(retriever_tool)
 
-    llm = ChatOllama(model=llm_model_name,temperature=0, verbose=True)
+    llm = ChatOllama(model=llm_model_name,temperature=1, verbose=True)
     agent_executor = create_react_agent(llm, tools, state_modifier=system_message)
 
     for s in agent_executor.stream(
@@ -176,10 +175,9 @@ def test_model(llm_model_name):
 
     print(f'=========={llm_model_name}==========')
     questions = [
-        #"有多少名员工？",
-        #"哪个国家的顾客花费最多？",
-        #"描述 PlaylistTrack 表"
-        "How many albums does Alice Chains have?",
+        "How many Employees are there?",
+        "Which country's customers spent the most?",
+        "How many albums does Itzhak Perlmam have?",
     ]
 
     for question in questions:
@@ -187,7 +185,7 @@ def test_model(llm_model_name):
 
 if __name__ == '__main__':
 
-    #print(retriever_tool.invoke("Alice Chains"))
+    print(retriever_tool.invoke("Itzhak Perlmam"))
     
     test_model("qwen2.5")
-    #test_model("llama3.1")
+    test_model("llama3.1")

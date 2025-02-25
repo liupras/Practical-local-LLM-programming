@@ -67,9 +67,7 @@ system = """您是设计用于与 SQL 数据库交互的代理。用中文回答
 请勿对数据库执行任何 DML 语句（INSERT、UPDATE、DELETE、DROP 等）。
 
 您有权访问以下数据库表： {table_names}
-
-如果您需要过滤专有名词，则必须始终先使用“search_proper_nouns”工具查找过滤值！
-不要试图猜测专有名词 - 使用此功能查找类似名称。""".format(
+""".format(
     table_names=db.get_usable_table_names()
 )
 
