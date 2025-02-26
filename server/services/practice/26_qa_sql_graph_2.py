@@ -38,9 +38,30 @@ def test_db():
 
 
 """
-2. 提示词
+2. 状态
 """
 
+from typing_extensions import TypedDict
+
+class State(TypedDict):
+    question: str
+    query: str
+    result: str
+    answer: str
+
+from langchain_ollama import ChatOllama
+llm = ChatOllama(model="llama3.1",temperature=0, verbose=True)
+
+def set_llm(llm_model_name):
+    """设置大模型，用于测试不同大模型"""
+    global llm 
+    llm = ChatOllama(model=llm_model_name,temperature=0, verbose=True)
+
+"""
+3. 定义langgraph节点
+"""
+
+# 提示词
 system = """You are an agent designed to interact with a SQL database.
 Given an input question, create a syntactically correct {dialect} query to run, then look at the results of the query and return the answer.
 Unless the user specifies a specific number of examples they wish to obtain, always limit your query to at most 5 results.
@@ -69,37 +90,12 @@ def test_prompt():
     assert len(query_prompt_template.messages) == 1
     query_prompt_template.messages[0].pretty_print()
 
-
-"""
-3. 状态
-"""
-
-from typing_extensions import TypedDict
-
-class State(TypedDict):
-    question: str
-    query: str
-    result: str
-    answer: str
-
-"""
-4. 定义langgraph节点
-"""
-
 from typing_extensions import Annotated
 
 class QueryOutput(TypedDict):
     """生成的SQL查询语句"""
 
     query: Annotated[str, ..., "Syntactically valid SQL query."]
-
-from langchain_ollama import ChatOllama
-llm = ChatOllama(model="llama3.1",temperature=0, verbose=True)
-
-def set_llm(llm_model_name):
-    """设置大模型，用于测试不同大模型"""
-    global llm 
-    llm = ChatOllama(model=llm_model_name,temperature=0, verbose=True)
 
 def write_query(state: State):
     """根据问题生成SQL查询语句"""
@@ -110,7 +106,7 @@ def write_query(state: State):
     )
     structured_llm = llm.with_structured_output(QueryOutput)
     result = structured_llm.invoke(prompt)
-    print(f'Query is:\n{result["query"]}')
+    #print(f'Query is:\n{result["query"]}')
     return {"query": result["query"]}
 
 
@@ -120,7 +116,7 @@ def execute_query(state: State):
     """执行SQL查询"""
     execute_query_tool = QuerySQLDatabaseTool(db=db)
     result = execute_query_tool.invoke(state["query"])
-    print(f'Result is:\n{result}')
+    #print(f'Result is:\n{result}')
     return {"result": result}
 
 
@@ -138,7 +134,7 @@ def generate_answer(state: State):
     return {"answer": response.content}
 
 """
-5. langgraph链
+4. langgraph链
 """
 
 from langgraph.graph import START, StateGraph
@@ -156,7 +152,9 @@ def ask(question):
     ):
         print(step)
 
-# Human-in-the-loop
+"""
+5. 在链中增加人工审核
+"""
 
 from langgraph.checkpoint.memory import MemorySaver
 
@@ -164,6 +162,7 @@ memory = MemorySaver()
 graph_with_human = graph_builder.compile(checkpointer=memory, interrupt_before=["execute_query"])
 
 def ask_with_human(question,thread_id):
+    """问答：增加了人工审核"""
     config = {"configurable": {"thread_id": thread_id}}
     for step in graph_with_human.stream(
         {"question": question},
@@ -173,16 +172,32 @@ def ask_with_human(question,thread_id):
         print(step)
 
     try:
-        user_approval = input("Do you want to go to execute query? (yes/no): ")
+        user_approval = input("您确定要执行查询么？(yes/no): ")
     except Exception:
         user_approval = "no"
 
     if user_approval.lower() == "yes":
-        # If approved, continue the graph execution
+        # 如果获得批准，再继续执行
         for step in graph_with_human.stream(None, config, stream_mode="updates"):
             print(step)
     else:
-        print("Operation cancelled by user.")
+        print("操作已被取消。")
+
+def test_model(llm_model_name):
+    """测试大模型"""
+
+    print(f'============{llm_model_name}==========')
+
+    set_llm(llm_model_name)
+
+    thread_id = "liu23"
+    questions = [
+        "How many Employees are there?",
+        "Which country's customers spent the most?",
+    ]
+
+    for question in questions:
+        ask_with_human( question,thread_id)
 
 if __name__ == '__main__':
     #test_db()
@@ -193,17 +208,8 @@ if __name__ == '__main__':
     #execute_query({"query": "SELECT COUNT(EmployeeId) AS EmployeeCount FROM Employee;"})
 
     #from utils import show_graph
-    #show_graph(graph)
+    #show_graph(graph_with_human)
 
-    question = "How many Employees are there?"
-    #write_query({"question": question})
-    #ask({"question": question})
-    ask_with_human(question,'123')
-
-    question = "Which country's customers spent the most?"      #不行
-    #write_query({"question": question})
-    #ask({"question": question})
-
-    question = "Describe the PlaylistTrack table"       #区分大小写，待改进。比如：用 PlaylistTrack 可以工作，但是用 playlisttrack 不准确
-    #ask({"question": question})
+    test_model("qwen2.5")
+    test_model("llama3.1")
     
