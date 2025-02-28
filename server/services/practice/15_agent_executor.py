@@ -206,6 +206,8 @@ def create_agent(llm_model_name,embed_model_name):
     agent = create_tool_calling_agent(llm, tools, prompt)
     return agent
 
+from langchain.agents import AgentExecutor
+
 def create_agent_executor(llm_model_name,embed_model_name):
     """创建agent_executor"""
 
@@ -216,9 +218,6 @@ def create_agent_executor(llm_model_name,embed_model_name):
     """实际上在create_agent中已经创建了tools，这里还要再传入tools，似乎有点多余。"""
 
     return agent_executor
-
-
-from langchain.agents import AgentExecutor
 
 def test_agent_executor(llm_model_name,embed_model_name,queries):
     """测试AgentExecutor"""

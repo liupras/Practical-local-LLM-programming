@@ -130,7 +130,7 @@ def generate_answer(state: State):
         f'SQL Result: {state["result"]}'
     )
     response = llm.invoke(prompt)
-    print(f'answer is:\n{response.content}')
+    #print(f'answer is:\n{response.content}')
     return {"answer": response.content}
 
 """
