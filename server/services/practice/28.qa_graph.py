@@ -6,21 +6,22 @@
 # @version : V0.5
 # @Description ：使用图形数据库进行问答。
 
-# neo4j
+# 安装neo4j
 # 下载地址：https://neo4j.com/deployment-center/
 # 安装：https://neo4j.com/docs/operations-manual/current/installation/windows/
-# 安装APOC插件：https://cloud.baidu.com/article/3289100 https://github.com/neo4j/apoc   https://github.com/neo4j/apoc/releases/tag/5.26.1
+# 安装APOC插件：https://github.com/neo4j/apoc/releases/tag/5.26.1
 
 import os
 os.environ["NEO4J_URI"] = "bolt://localhost:7687"
 os.environ["NEO4J_USERNAME"] = "neo4j"
-os.environ["NEO4J_PASSWORD"] = "12345678"
+os.environ["NEO4J_PASSWORD"] = "neo4j"
 
 from langchain_neo4j import Neo4jGraph
 
 graph = Neo4jGraph()
 
 def create_graph():
+    """导入数据，创建图形数据库"""
 
     # 把movies_small.csv拷贝到neo4j的import文件夹内
     db_file_path = 'file:///movies_small.csv'
@@ -63,10 +64,13 @@ chain = GraphCypherQAChain.from_llm(
 )
 
 def ask(question:str):
+    """询问图数据库内容"""
+
     response = chain.invoke({"query": question})
     print(f'response:\n{response}')
 
 if __name__ == '__main__':
+    
     #create_graph()
     ask("What was the cast of the Casino?")
 

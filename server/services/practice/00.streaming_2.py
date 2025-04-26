@@ -4,7 +4,7 @@
 # @time    : 2025-02-27
 # @function: 流式输出
 # @version : V0.5
-# @Description ：测试流式输出。
+# @Description ：测试流式输出。未成功！
 
 llm_model_name = "qwen2.5"
 
@@ -90,6 +90,8 @@ class CallbackHandler(StreamingStdOutCallbackHandler):
                 if index == -1:
                     sys.stdout.write('^')
                 sys.stdout.flush()
+    def on_llm_end(self, response, **kwargs):
+        return super().on_llm_end(response, **kwargs)
 
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 model = ChatOllama(model=llm_model_name,temperature=0.3,verbose=True,callbacks=[StreamingStdOutCallbackHandler()])
@@ -134,8 +136,23 @@ def print_useful(chunk):
         raise ValueError()
     print("---")
 
+from langchain.callbacks.base import BaseCallbackHandler
+
+class SafeLogger(BaseCallbackHandler):
+    def on_llm_end(self, response, **kwargs):
+        print("LLM finished. Skipping object serialization.")
+        # 不尝试序列化 LLM 返回的消息，避免抛出 NotImplementedError
+
+agent_executor_safe = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    callbacks=[SafeLogger()],
+    verbose=True,
+).with_config({"run_name": "Agent"})
+
+
 async def ask_2(question):
-    async for event in agent_executor.astream_events(
+    async for event in agent_executor_safe.astream_events(
         {"input": question},
         version="v1",
     ):
@@ -202,5 +219,5 @@ if __name__ == '__main__':
     asyncio.run(ask_2("where is the cat hiding? what items are in that location?"))
     '''
 
-    #ask_3("what's items are located where the cat is hiding?")
-    ask_3("请参考哪吒闹海的故事架构，写一篇200-300字的神话故事。")
+    ask_3("what's items are located where the cat is hiding?")
+    #ask_3("请参考哪吒闹海的故事架构，写一篇200-300字的神话故事。")

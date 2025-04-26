@@ -9,33 +9,42 @@
 # neo4j
 # 下载地址：https://neo4j.com/deployment-center/
 # 安装：https://neo4j.com/docs/operations-manual/current/installation/windows/
-# 安装APOC插件：https://cloud.baidu.com/article/3289100 https://github.com/neo4j/apoc   https://github.com/neo4j/apoc/releases/tag/5.26.1
+# 安装APOC插件：https://github.com/neo4j/apoc/releases/tag/5.26.1
 
 # https://python.langchain.com/docs/tutorials/graph/#advanced-implementation-with-langgraph
 
 import os
-os.environ["NEO4J_URI"] = "bolt://localhost:7687"
-os.environ["NEO4J_USERNAME"] = "neo4j"
-os.environ["NEO4J_PASSWORD"] = "12345678"
+
+def create_enhanced_graph():
+    """创建NEO4J对象"""
+
+    os.environ["NEO4J_URI"] = "bolt://localhost:7687"
+    os.environ["NEO4J_USERNAME"] = "neo4j"
+    os.environ["NEO4J_PASSWORD"] = "neo4j"
 
 
-from langchain_neo4j import Neo4jGraph
-graph = Neo4jGraph()
+    from langchain_neo4j import Neo4jGraph
 
-enhanced_graph = Neo4jGraph(enhanced_schema=True)
-#print(enhanced_graph.schema)
+    enhanced_graph = Neo4jGraph(enhanced_schema=True)
+    #print(enhanced_graph.schema)
+    return enhanced_graph
+
+enhanced_graph = create_enhanced_graph()
+
+"""
+1. 定义状态
+"""
 
 from operator import add
 from typing import Annotated, List
-
 from typing_extensions import TypedDict
 
-
 class InputState(TypedDict):
+    """输入"""
     question: str
 
-
 class OverallState(TypedDict):
+    """整体"""
     question: str
     next_action: str
     cypher_statement: str
@@ -43,11 +52,15 @@ class OverallState(TypedDict):
     database_records: List[dict]
     steps: Annotated[List[str], add]
 
-
 class OutputState(TypedDict):
+    """输出"""
     answer: str
     steps: List[str]
     cypher_statement: str
+
+"""
+2. 第一个节点：护栏/guardrails
+"""
 
 from typing import Literal
 
@@ -80,7 +93,7 @@ class GuardrailsOutput(BaseModel):
     )
 
 from langchain_ollama import ChatOllama
-llm_llama = ChatOllama(model="llama3.1",temperature=0, verbose=True)   #llama3.1查不出内容；EntropyYue/chatglm3生成的查询有问题报错
+llm_llama = ChatOllama(model="llama3.1",temperature=0, verbose=True)
 
 guardrails_chain = guardrails_prompt | llm_llama.with_structured_output(GuardrailsOutput)
 
@@ -99,8 +112,9 @@ def guardrails(state: InputState) -> OverallState:
         "steps": ["guardrail"],
     }
 
-from langchain_community.embeddings import OllamaEmbeddings
-embeddings = OllamaEmbeddings(model="nomic-embed-text")
+"""
+3. 节点：生成Cypher/generate_cypher（查询NEO4J的语句）
+"""
 
 # Few-shot prompting
 from langchain_core.example_selectors import SemanticSimilarityExampleSelector
@@ -140,6 +154,9 @@ examples = [
         "query": "MATCH (a:Actor)-[:ACTED_IN]->(m:Movie) RETURN a.name, COUNT(m) AS movieCount ORDER BY movieCount DESC LIMIT 1",
     },
 ]
+
+from langchain_ollama import OllamaEmbeddings
+embeddings = OllamaEmbeddings(model="nomic-embed-text")
 
 example_selector = SemanticSimilarityExampleSelector.from_examples(
     examples, embeddings, Neo4jVector, k=5, input_keys=["question"]
@@ -202,7 +219,10 @@ def generate_cypher(state: OverallState) -> OverallState:
     )
     return {"cypher_statement": generated_cypher, "steps": ["generate_cypher"]}
 
-# Query validation
+"""
+4. 节点：校验Cypher查询
+未加入到langgraph
+"""
 
 from typing import List, Optional
 
@@ -279,6 +299,11 @@ class ValidateCypherOutput(BaseModel):
 validate_cypher_chain = validate_cypher_prompt | llm_qwen.with_structured_output(
     ValidateCypherOutput
 )
+
+"""
+5. 节点：纠正Cypher查询
+未加入到langgraph
+"""
 
 from langchain_neo4j.chains.graph_qa.cypher_utils import CypherQueryCorrector, Schema
 
@@ -419,8 +444,12 @@ def correct_cypher(state: OverallState) -> OverallState:
         "steps": ["correct_cypher"],
     }
 
-no_results = "I couldn't find any relevant information in the database"
 
+"""
+6. 节点：执行Cypher查询
+"""
+
+no_results = "I couldn't find any relevant information in the database"
 
 def execute_cypher(state: OverallState) -> OverallState:
     """
@@ -433,6 +462,11 @@ def execute_cypher(state: OverallState) -> OverallState:
         "next_action": "end",
         "steps": ["execute_cypher"],
     }
+
+
+"""
+7. 节点：生成最终回答
+"""
 
 generate_final_prompt = ChatPromptTemplate.from_messages(
     [
@@ -466,6 +500,11 @@ def generate_final_answer(state: OverallState) -> OutputState:
         {"question": state.get("question"), "results": state.get("database_records")}
     )
     return {"answer": final_answer, "steps": ["generate_final_answer"]}
+
+
+"""
+8. 节点：构建工作流
+"""
 
 def guardrails_condition(
     state: OverallState,
@@ -502,16 +541,6 @@ langgraph.add_conditional_edges(
     guardrails_condition,
 )
 
-'''
-langgraph.add_edge("generate_cypher", "validate_cypher")
-langgraph.add_conditional_edges(
-    "validate_cypher",
-    validate_cypher_condition,
-)
-langgraph.add_edge("execute_cypher", "generate_final_answer")
-langgraph.add_edge("correct_cypher", "validate_cypher")
-'''
-
 langgraph.add_edge("generate_cypher","execute_cypher")
 langgraph.add_edge("execute_cypher","generate_final_answer")
 
@@ -525,10 +554,10 @@ def ask(question:str):
 
 if __name__ == '__main__':
 
-    '''
+    
     from utils import show_graph
     show_graph(langgraph)
-    '''
+    
 
-    #ask("What's the weather in Spain?")
+    ask("What's the weather in Spain?")
     ask("What was the cast of the Casino?")
