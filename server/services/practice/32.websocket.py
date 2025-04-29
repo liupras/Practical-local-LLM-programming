@@ -18,14 +18,15 @@ def ask(question):
     return result.content
 
 import asyncio
-async def ask_stream(question,websocket):
+async def ask_stream(question,websocket=None):
     """与大模型聊天，流式输出"""
 
     for chunk in llm.stream([HumanMessage(content=question)]):
         if isinstance(chunk, AIMessage) and chunk.content !='':
             print(chunk.content,end="^")
-            await websocket.send_json({"reply": chunk.content})
-            await asyncio.sleep(0.1)    # sleep一下后，前端就可以一点一点显示内容。
+            if websocket is not None:
+                await websocket.send_json({"reply": chunk.content})
+                await asyncio.sleep(0.1)    # sleep一下后，前端就可以一点一点显示内容。
             
             
 import os
