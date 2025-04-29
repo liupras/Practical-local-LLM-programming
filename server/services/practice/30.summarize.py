@@ -13,68 +13,49 @@ os.environ['USER_AGENT'] = 'summarize'
 
 from langchain_community.document_loaders import WebBaseLoader
 
-loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
+"""
+1. 加载文档
+"""
+
+loader = WebBaseLoader("http://wfcoding.com/articles/practice/03%E6%9C%AC%E5%9C%B0%E5%A4%A7%E6%A8%A1%E5%9E%8B%E7%BC%96%E7%A8%8B%E5%AE%9E%E6%88%98/",encoding='utf-8')
 docs = loader.load()
 
 from langchain_ollama import ChatOllama
-llm = ChatOllama(model="EntropyYue/chatglm3",temperature=0.3, verbose=True)
+llm = ChatOllama(model="qwen2.5",temperature=0.3, verbose=True)
 # llama3.1 不能执行此任务
 #llm = ChatOllama(model="llama3.1",temperature=0.3, verbose=True)
 
-# Stuff: summarize in a single LLM call
+"""
+2. 用一次调用提取摘要
+"""
 
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
 
-# Define prompt
+# 定义提示词
 prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", "Write a concise summary of the following:\\n\\n{context}")
+        ("system", "请简明扼要地概括以下内容:\\n\\n{context}")
     ]
 )
 
-
-# Instantiate chain
+# 初始化 chain
 chain = create_stuff_documents_chain(llm, prompt)
 
 def sum_single_llm_call() :    
 
-    # Invoke chain
+    # 调用 chain
     result = chain.invoke({"context": docs})
     print(result)
+
+"""
+3. 流式输出
+"""
 
 def sum_single_llm_call_stream() :    
 
     for token in chain.stream({"context": docs}):
         print(token, end="|")
-
-# Map
-map_prompt = ChatPromptTemplate.from_messages(
-    [("system", "Write a concise summary of the following:\\n\\n{context}")]
-)
-
-# Reduce
-# Also available via the hub: `hub.pull("rlm/reduce-prompt")`
-reduce_template = """
-The following is a set of summaries:
-{docs}
-Take these and distill it into a final, consolidated summary
-of the main themes.
-"""
-
-reduce_prompt = ChatPromptTemplate([("human", reduce_template)])
-
-# Orchestration via LangGraph
-
-from langchain_text_splitters import CharacterTextSplitter
-
-text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
-    chunk_size=1000, chunk_overlap=0
-)
-split_docs = text_splitter.split_documents(docs)
-print(f"Generated {len(split_docs)} documents.")
-
-
 
 if __name__ == '__main__':
     #sum_single_llm_call()

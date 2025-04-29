@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>用WebSocket与大模型聊天</title>
+    <style>
+        #chat-box {
+            width: 90%;
+            height: 600px;
+            border: 1px solid #ccc;
+            overflow-y: scroll;
+            margin-bottom: 10px;
+            padding: 10px;
+        }
+
+        #user-input {
+            width: 80%;
+            padding: 5px;
+        }
+
+        #send-button {
+            padding: 5px 10px;
+        }
+
+        .user-message {
+            color: blue;
+        }
+
+        .server-message {
+            color: green;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>WebSocket 聊天测试</h1>
+    <div id="chat-box"></div>
+    <input type="text" id="user-input" placeholder="请输入你的消息..." />
+    <button id="send-button" onclick="sendMessage()">发送</button>
+
+    <script>
+        var ws = new WebSocket("ws://localhost:8000/ws");
+        var chatBox = document.getElementById("chat-box");
+        var input = document.getElementById("user-input");
+    
+        var currentServerMessageDiv = null; // 记录正在追加的服务器消息元素
+    
+        ws.onmessage = function(event) {
+            var data = JSON.parse(event.data);
+            handleServerReply(data.reply);
+        };
+    
+        function sendMessage() {
+            var message = input.value.trim();
+            if (message === "") return;
+    
+            appendMessage("你", message, "user-message");
+            ws.send(JSON.stringify({ "message": message }));
+            input.value = "";
+    
+            // 清空服务器回复正在构建的div
+            currentServerMessageDiv = null;
+        }
+    
+        function appendMessage(sender, message, className) {
+            var messageElement = document.createElement("div");
+            messageElement.className = className;
+            messageElement.textContent = sender + ": " + message;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return messageElement;
+        }
+    
+        function handleServerReply(partialText) {
+            if (!currentServerMessageDiv) {
+                // 第一次，创建一个新的div
+                currentServerMessageDiv = appendMessage("服务器", partialText, "server-message");
+            } else {
+                // 后续，直接在当前div后面追加
+                currentServerMessageDiv.textContent += partialText;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+    
+        // 按回车发送消息
+        input.addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        });
+    </script>
+    
+</body>
+
+</html>
