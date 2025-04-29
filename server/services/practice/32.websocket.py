@@ -68,6 +68,4 @@ if __name__ == '__main__':
     # http://127.0.0.1:8000/docs/ 
     # http://127.0.0.1:8000/redoc/
 
-    # http://127.0.0.1:8000/docs/ 自定义接口文档
-
     uvicorn.run(app, host="0.0.0.0", port=8000)
